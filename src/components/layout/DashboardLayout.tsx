@@ -22,6 +22,22 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold">Sistema ERP</h1>
+<nav className="flex space-x-4">
+  <a
+    href="/dashboard"
+    className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+  >
+    Dashboard
+  </a>
+  {user?.permissions?.includes('users:read') && (
+    <a
+      href="/users"
+      className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+    >
+      Usuarios
+    </a>
+  )}
+</nav>
             </div>
             <div className="flex items-center space-x-4">
               <span className="text-gray-700">
