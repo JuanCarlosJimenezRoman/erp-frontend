@@ -73,6 +73,19 @@ const UsersPage: React.FC = () => {
     loadUsers(1, search);
   };
 
+  const handleReactivate = async (id: string) => {
+  if (!window.confirm('¿Estás seguro de que quieres reactivar este usuario?')) {
+    return;
+  }
+
+  try {
+    await userService.updateUser(id, { isActive: true });
+    loadUsers(pagination.page, search);
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Error reactivando usuario');
+  }
+};
+
   if (loading && users.length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -130,6 +143,7 @@ const UsersPage: React.FC = () => {
         currentUser={currentUser}
         onEdit={setEditingUser}
         onDelete={handleDelete}
+        onReactivate={handleReactivate}
         pagination={pagination}
         onPageChange={loadUsers}
       />

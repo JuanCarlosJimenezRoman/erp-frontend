@@ -9,8 +9,8 @@ export interface Role {
 }
 
 export const roleService = {
-  getRoles: async (): Promise<Role[]> => {
-    const response = await api.get('/roles');
+  getRoles: async (includeAdmin: boolean = false): Promise<Role[]> => {
+    const response = await api.get(`/roles?includeAdmin=${includeAdmin}`);
     return response.data;
   },
 

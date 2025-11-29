@@ -24,15 +24,23 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
   useEffect(() => {
     loadRoles();
     if (mode === 'edit' && user) {
-      setFormData({
-        name: user.name,
-        email: user.email,
-        password: '',
-        confirmPassword: '',
-        roleId: user.roleId || ''
-      });
-    }
-  }, [mode, user]);
+  setFormData({
+    name: user.name,
+    email: user.email,
+    password: '',
+    confirmPassword: '',
+    roleId: user.roleId || ''
+  });
+
+  // Si es el admin principal, prevenir cambios críticos
+  if (user.email === 'admin@erp.com') {
+    setErrors(prev => ({
+      ...prev,
+      general: 'Usuario administrador principal - algunos cambios están restringidos'
+    }));
+  }
+}
+  })
 
   const loadRoles = async () => {
     try {
@@ -123,6 +131,23 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto p-6">
+      {errors.general && (
+  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+    <div className="flex">
+      <div className="flex-shrink-0">
+        <span className="text-yellow-400">⚠</span>
+      </div>
+      <div className="ml-3">
+        <h3 className="text-sm font-medium text-yellow-800">
+          Aviso importante
+        </h3>
+        <div className="mt-1 text-sm text-yellow-700">
+          <p>{errors.general}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">
             {mode === 'create' ? 'Crear Usuario' : 'Editar Usuario'}
@@ -178,13 +203,14 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Rol *
             </label>
-            <select
+           <select
               name="roleId"
               value={formData.roleId}
               onChange={handleChange}
+              disabled={mode === 'edit' && user?.email === 'admin@erp.com'}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 errors.roleId ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${mode === 'edit' && user?.email === 'admin@erp.com' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">Seleccionar rol</option>
               {roles.map((role) => (
