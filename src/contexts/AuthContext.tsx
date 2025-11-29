@@ -17,7 +17,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/immutability
     checkAuth();
   }, []);
 
@@ -32,7 +31,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         // Verificar si el token sigue siendo válido
         await authService.getProfile();
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (error) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -67,7 +65,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

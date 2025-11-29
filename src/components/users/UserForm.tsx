@@ -39,12 +39,13 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
       general: 'Usuario administrador principal - algunos cambios están restringidos'
     }));
   }
-}
-  })
+} 
+}, [mode, user]);
 
   const loadRoles = async () => {
     try {
-      const rolesData = await roleService.getRoles();
+      
+      const rolesData = await roleService.getRoles(true);
       setRoles(rolesData);
     } catch (error) {
       console.error('Error cargando roles:', error);
@@ -203,14 +204,13 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Rol *
             </label>
-           <select
+            <select
               name="roleId"
               value={formData.roleId}
               onChange={handleChange}
-              disabled={mode === 'edit' && user?.email === 'admin@erp.com'}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 errors.roleId ? 'border-red-500' : 'border-gray-300'
-              } ${mode === 'edit' && user?.email === 'admin@erp.com' ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+              }`}
             >
               <option value="">Seleccionar rol</option>
               {roles.map((role) => (
