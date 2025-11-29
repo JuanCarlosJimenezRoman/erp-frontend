@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { userService, type User, type CreateUserData, type UpdateUserData } from '../services/user.service';
+import type { User, CreateUserData, UpdateUserData } from '../types/user';
 import UserTable from '../components/users/UserTable';
 import UserForm from '../components/users/UserForm';
 import { useAuth } from '../contexts/AuthContext';
+import { userService } from '../services/user.service';
 
 const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();

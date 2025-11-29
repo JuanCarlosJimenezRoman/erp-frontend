@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {type User } from '../../services/user.service';
+import type { User } from '../../types/user';
 
 interface UserTableProps {
   users: User[];

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { type CreateUserData, type UpdateUserData, type User } from '../../services/user.service';
-import { roleService, type Role } from '../../services/role.service';
+import { userService } from '../../services/user.service';
+import { roleService } from '../../services/role.service';
+import type { CreateUserData, UpdateUserData, User } from '../../types/user';
+import type { Role } from '../../services/role.service';
 
 interface UserFormProps {
   mode: 'create' | 'edit';
@@ -22,35 +24,34 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
-    loadRoles();
-    if (mode === 'edit' && user) {
-  setFormData({
-    name: user.name,
-    email: user.email,
-    password: '',
-    confirmPassword: '',
-    roleId: user.roleId || ''
-  });
+    const initializeForm = async () => {
+      try {
+        const rolesData = await roleService.getRoles(true);
+        setRoles(rolesData);
+        
+        if (mode === 'edit' && user) {
+          setFormData({
+            name: user.name,
+            email: user.email,
+            password: '',
+            confirmPassword: '',
+            roleId: user.roleId || ''
+          });
 
-  // Si es el admin principal, prevenir cambios críticos
-  if (user.email === 'admin@erp.com') {
-    setErrors(prev => ({
-      ...prev,
-      general: 'Usuario administrador principal - algunos cambios están restringidos'
-    }));
-  }
-} 
-}, [mode, user]);
+          if (user.email === 'admin@erp.com') {
+            setErrors(prev => ({
+              ...prev,
+              general: 'Usuario administrador principal - algunos cambios están restringidos'
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error inicializando formulario:', error);
+      }
+    };
 
-  const loadRoles = async () => {
-    try {
-      
-      const rolesData = await roleService.getRoles(true);
-      setRoles(rolesData);
-    } catch (error) {
-      console.error('Error cargando roles:', error);
-    }
-  };
+    initializeForm();
+  }, [mode, user]);
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -120,7 +121,6 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
       [name]: value
     }));
     
-    // Limpiar error del campo cuando se modifica
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -129,26 +129,29 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
     }
   };
 
+  const isAdminPrincipal = mode === 'edit' && user?.email === 'admin@erp.com';
+
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
       <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-auto p-6">
-      {errors.general && (
-  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-    <div className="flex">
-      <div className="flex-shrink-0">
-        <span className="text-yellow-400">⚠</span>
-      </div>
-      <div className="ml-3">
-        <h3 className="text-sm font-medium text-yellow-800">
-          Aviso importante
-        </h3>
-        <div className="mt-1 text-sm text-yellow-700">
-          <p>{errors.general}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+        {errors.general && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <span className="text-yellow-400">⚠</span>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  Aviso importante
+                </h3>
+                <div className="mt-1 text-sm text-yellow-700">
+                  <p>{errors.general}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">
             {mode === 'create' ? 'Crear Usuario' : 'Editar Usuario'}
@@ -208,9 +211,10 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
               name="roleId"
               value={formData.roleId}
               onChange={handleChange}
+              disabled={isAdminPrincipal}
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
                 errors.roleId ? 'border-red-500' : 'border-gray-300'
-              }`}
+              } ${isAdminPrincipal ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             >
               <option value="">Seleccionar rol</option>
               {roles.map((role) => (
@@ -221,6 +225,11 @@ const UserForm: React.FC<UserFormProps> = ({ mode, user, onSave, onCancel }) => 
             </select>
             {errors.roleId && (
               <p className="text-red-500 text-xs mt-1">{errors.roleId}</p>
+            )}
+            {isAdminPrincipal && (
+              <p className="text-gray-500 text-xs mt-1">
+                El rol del administrador principal no puede ser modificado
+              </p>
             )}
           </div>
 
