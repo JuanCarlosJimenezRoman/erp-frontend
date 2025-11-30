@@ -5,6 +5,10 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import DashboardLayout from './components/layout/DashboardLayout';
 import UsersPage from './pages/UsersPage';
+import AccountingDashboard from './pages/accounting/AccountingDashboard';
+import AccountsPage from './pages/accounting/AccountsPage';
+import TransactionsPage from './pages/accounting/TransactionsPage';
+import InvoicesPage from './pages/accounting/InvoicesPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -67,6 +71,46 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/accounting"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AccountingDashboard />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accounting/accounts"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <AccountsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accounting/transactions"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <TransactionsPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/accounting/invoices"
+            element={
+              <ProtectedRoute>
+                <DashboardLayout>
+                  <InvoicesPage />
+                </DashboardLayout>
+              </ProtectedRoute>
+            }
+            />
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>
