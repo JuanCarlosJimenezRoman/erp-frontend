@@ -9,6 +9,12 @@ import AccountingDashboard from './pages/accounting/AccountingDashboard';
 import AccountsPage from './pages/accounting/AccountsPage';
 import TransactionsPage from './pages/accounting/TransactionsPage';
 import InvoicesPage from './pages/accounting/InvoicesPage';
+import InventoryDashboard from './pages/inventory/InventoryDashboard';
+import ProductsPage from './pages/inventory/ProductsPage';
+import CategoriesPage from './pages/inventory/CategoriesPage';
+import SuppliersPage from './pages/inventory/SuppliersPage';
+import AlertsPage from './pages/inventory/AlertsPage';
+import MovementsPage from './pages/inventory/MovementsPage';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -111,6 +117,67 @@ function App() {
               </ProtectedRoute>
             }
             />
+            <Route
+  path="/inventory"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <InventoryDashboard />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/inventory/products"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <ProductsPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/inventory/categories"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <CategoriesPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/inventory/suppliers"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <SuppliersPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/inventory/movements"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <MovementsPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+<Route
+  path="/inventory/alerts"
+  element={
+    <ProtectedRoute>
+      <DashboardLayout>
+        <AlertsPage />
+      </DashboardLayout>
+    </ProtectedRoute>
+  }
+/>
+
           <Route path="/" element={<Navigate to="/dashboard" />} />
         </Routes>
       </Router>

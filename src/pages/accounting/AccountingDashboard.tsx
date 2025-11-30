@@ -3,6 +3,7 @@ import { accountingService } from '../../services/accounting.service';
 import { useAuth } from '../../contexts/AuthContext';
 import type { AccountingDashboard } from '../../types/accounting';
 
+
 const AccountingDashboard: React.FC = () => {
   const { user } = useAuth();
   const [dashboard, setDashboard] = useState<AccountingDashboard | null>(null);
@@ -185,3 +186,5 @@ const AccountingDashboard: React.FC = () => {
 };
 
 export default AccountingDashboard;
+
+
