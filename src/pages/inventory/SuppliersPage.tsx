@@ -10,15 +10,16 @@ const SuppliersPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [showInactive, setShowInactive] = useState(false); // ← Nuevo estado
 
   useEffect(() => {
     loadSuppliers();
-  }, []);
+  }, [showInactive]); // ← Recargar cuando cambie el filtro
 
   const loadSuppliers = async () => {
     try {
       setLoading(true);
-      const suppliersData = await inventoryService.getSuppliers();
+      const suppliersData = await inventoryService.getSuppliers(showInactive); // ← Pasar parámetro
       setSuppliers(suppliersData);
     } catch (error) {
       console.error('Error cargando proveedores:', error);
@@ -69,7 +70,36 @@ const SuppliersPage: React.FC = () => {
         )}
       </div>
 
-      {/* Tabla de proveedores */}
+      {/* Filtro para mostrar inactivos */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                checked={showInactive}
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Mostrar proveedores inactivos
+              </span>
+            </label>
+            
+            {showInactive && (
+              <span className="text-sm text-gray-500 bg-yellow-50 px-3 py-1 rounded-md">
+                💡 Modo vista de proveedores inactivos
+              </span>
+            )}
+          </div>
+          
+          <div className="text-sm text-gray-500">
+            {suppliers.length} proveedores encontrados
+          </div>
+        </div>
+      </div>
+
+      {/* Tabla de proveedores MEJORADA */}
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -95,50 +125,81 @@ const SuppliersPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {suppliers.map((supplier) => (
-              <tr key={supplier.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{supplier.name}</div>
-                  {supplier.taxId && (
-                    <div className="text-sm text-gray-500">RUC: {supplier.taxId}</div>
-                  )}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">{supplier.email}</div>
-                  <div className="text-sm text-gray-500">{supplier.phone}</div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-500">{supplier.address || '-'}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-900">{supplier.productsCount || 0}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    supplier.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {supplier.isActive ? 'Activo' : 'Inactivo'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {user?.permissions?.includes('almacen:write') && (
-                    <button
-                      onClick={() => setEditingSupplier(supplier)}
-                      className="text-indigo-600 hover:text-indigo-900"
-                    >
-                      Editar
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
+            {suppliers.map((supplier) => {
+              const isInactive = !supplier.isActive;
+              
+              return (
+                <tr 
+                  key={supplier.id} 
+                  className={`hover:bg-gray-50 ${isInactive ? 'bg-gray-50' : ''}`}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`text-sm font-medium ${isInactive ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {supplier.name}
+                    </div>
+                    {supplier.taxId && (
+                      <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-500'}`}>
+                        RUC: {supplier.taxId}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {supplier.email || '-'}
+                    </div>
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {supplier.phone || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {supplier.address || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {supplier.productsCount || 0}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      supplier.isActive 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {supplier.isActive ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {user?.permissions?.includes('almacen:write') && (
+                      <button
+                        onClick={() => setEditingSupplier(supplier)}
+                        className={`${isInactive ? 'text-gray-600 hover:text-gray-900' : 'text-indigo-600 hover:text-indigo-900'}`}
+                      >
+                        Editar
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
         {suppliers.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 text-6xl mb-4">🏢</div>
-            <p className="text-gray-500 text-lg">No hay proveedores registrados</p>
+            <p className="text-gray-500 text-lg">
+              {showInactive 
+                ? 'No hay proveedores inactivos' 
+                : 'No hay proveedores registrados'
+              }
+            </p>
+            {!showInactive && (
+              <p className="text-gray-400 text-sm mt-2">
+                ¿Buscas proveedores inactivos? Activa el filtro "Mostrar proveedores inactivos"
+              </p>
+            )}
           </div>
         )}
       </div>

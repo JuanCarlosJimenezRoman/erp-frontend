@@ -18,16 +18,20 @@ const ProductsPage: React.FC = () => {
     total: 0,
     pages: 0
   });
+
+  // 1. Agregamos includeInactive al estado de filtros
   const [filters, setFilters] = useState({
     categoryId: '',
-    supplierId: ''
+    supplierId: '',
+    includeInactive: false // <--- CAMBIO: Nuevo estado
   });
 
   useEffect(() => {
     loadProducts();
     loadCategories();
     loadSuppliers();
-  }, [pagination.page, filters.categoryId, filters.supplierId]);
+    // 2. Agregamos la dependencia para recargar al cambiar el check
+  }, [pagination.page, filters.categoryId, filters.supplierId, filters.includeInactive]); 
 
   const loadProducts = async () => {
     try {
@@ -36,7 +40,8 @@ const ProductsPage: React.FC = () => {
         pagination.page,
         pagination.limit,
         filters.categoryId || undefined,
-        filters.supplierId || undefined
+        filters.supplierId || undefined,
+        filters.includeInactive // <--- CAMBIO: Enviamos el parámetro al backend
       );
       setProducts(response.products);
       setPagination(prev => ({ ...prev, ...response.pagination }));
@@ -86,22 +91,28 @@ const ProductsPage: React.FC = () => {
   };
 
   const getStockStatus = (product: Product) => {
+    if (!product.isActive) return 'INACTIVE'; // <--- Opcional: Para manejar lógica específica
     const currentStock = product.currentStock || 0;
     if (currentStock <= product.minStock) return 'LOW';
     if (product.maxStock && currentStock > product.maxStock) return 'OVER';
     return 'NORMAL';
   };
 
-  const getStockStatusColor = (status: string) => {
+  const getStockStatusColor = (status: string, isActive: boolean) => {
+    if (!isActive) return 'bg-gray-200 text-gray-600'; // Color gris para inactivos
+
     const colors = {
       LOW: 'bg-red-100 text-red-800',
       NORMAL: 'bg-green-100 text-green-800',
-      OVER: 'bg-yellow-100 text-yellow-800'
+      OVER: 'bg-yellow-100 text-yellow-800',
+      INACTIVE: 'bg-gray-200 text-gray-600'
     };
     return colors[status as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStockStatusLabel = (status: string) => {
+  const getStockStatusLabel = (status: string, isActive: boolean) => {
+    if (!isActive) return 'Inactivo';
+
     const labels = {
       LOW: 'Bajo',
       NORMAL: 'Normal',
@@ -134,48 +145,69 @@ const ProductsPage: React.FC = () => {
 
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Categoría:</label>
-          <select
-            value={filters.categoryId}
-            onChange={(e) => {
-              setFilters(prev => ({ ...prev, categoryId: e.target.value }));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">Todas las categorías</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-
-          <label className="text-sm font-medium text-gray-700 ml-4">Proveedor:</label>
-          <select
-            value={filters.supplierId}
-            onChange={(e) => {
-              setFilters(prev => ({ ...prev, supplierId: e.target.value }));
-              setPagination(prev => ({ ...prev, page: 1 }));
-            }}
-            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">Todos los proveedores</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </option>
-            ))}
-          </select>
-
-          {(filters.categoryId || filters.supplierId) && (
-            <button
-              onClick={() => {
-                setFilters({ categoryId: '', supplierId: '' });
+        <div className="flex flex-wrap items-center gap-4"> {/* Cambié space-x-4 por gap-4 y flex-wrap para mejor respuesta móvil */}
+          
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">Categoría:</label>
+            <select
+              value={filters.categoryId}
+              onChange={(e) => {
+                setFilters(prev => ({ ...prev, categoryId: e.target.value }));
                 setPagination(prev => ({ ...prev, page: 1 }));
               }}
-              className="text-red-600 hover:text-red-800 text-sm"
+              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Todas las categorías</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">Proveedor:</label>
+            <select
+              value={filters.supplierId}
+              onChange={(e) => {
+                setFilters(prev => ({ ...prev, supplierId: e.target.value }));
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Todos los proveedores</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>
+                  {supplier.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Checkbox para Inactivos */}
+          <div className="flex items-center pt-6"> {/* pt-6 para alinear con los inputs */}
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filters.includeInactive}
+                onChange={(e) => {
+                    setFilters(prev => ({ ...prev, includeInactive: e.target.checked }));
+                    setPagination(prev => ({ ...prev, page: 1 }));
+                }}
+                className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 h-5 w-5"
+              />
+              <span className="ml-2 text-sm text-gray-700">Mostrar inactivos</span>
+            </label>
+          </div>
+
+          {(filters.categoryId || filters.supplierId || filters.includeInactive) && (
+            <button
+              onClick={() => {
+                setFilters({ categoryId: '', supplierId: '', includeInactive: false });
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="text-red-600 hover:text-red-800 text-sm pt-6"
             >
               Limpiar filtros
             </button>
@@ -188,65 +220,60 @@ const ProductsPage: React.FC = () => {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                SKU
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Producto
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Categoría
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Stock
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Precio
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Producto</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {products.map((product) => {
               const stockStatus = getStockStatus(product);
+              // 4. Estilo Condicional para filas inactivas
+              const rowClass = product.isActive 
+                ? "hover:bg-gray-50" 
+                : "bg-gray-50 text-gray-500"; // Fondo gris claro y texto atenuado
+
               return (
-                <tr key={product.id} className="hover:bg-gray-50">
+                <tr key={product.id} className={rowClass}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{product.sku}</div>
+                    <div className={`text-sm font-medium ${product.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {product.sku}
+                    </div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                    <div className={`text-sm font-medium ${product.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {product.name}
+                    </div>
                     {product.description && (
-                      <div className="text-sm text-gray-500">{product.description}</div>
+                      <div className="text-sm text-gray-400">{product.description}</div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{product.category?.name}</div>
+                    <div className={`text-sm ${product.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {product.category?.name}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className={`text-sm font-medium ${product.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                       {product.currentStock || 0}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-400">
                       Mín: {product.minStock} {product.maxStock && `Máx: ${product.maxStock}`}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-semibold text-gray-900">
+                    <div className={`text-sm font-semibold ${product.isActive ? 'text-gray-900' : 'text-gray-500'}`}>
                       ${product.price.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Costo: ${product.cost.toLocaleString()}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStockStatusColor(stockStatus)}`}>
-                      {getStockStatusLabel(stockStatus)}
+                    {/* 5. Usamos las funciones de color actualizadas que consideran isActive */}
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStockStatusColor(stockStatus, product.isActive)}`}>
+                      {getStockStatusLabel(stockStatus, product.isActive)}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -254,14 +281,17 @@ const ProductsPage: React.FC = () => {
                       {user?.permissions?.includes('almacen:write') && (
                         <button
                           onClick={() => setEditingProduct(product)}
-                          className="text-indigo-600 hover:text-indigo-900"
+                          className={`${product.isActive ? 'text-indigo-600 hover:text-indigo-900' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                           Editar
                         </button>
                       )}
-                      <button className="text-gray-600 hover:text-gray-900">
-                        Movimientos
-                      </button>
+                      {/* Opcional: Deshabilitar movimientos si está inactivo */}
+                      {product.isActive && (
+                        <button className="text-gray-600 hover:text-gray-900">
+                            Movimientos
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -282,10 +312,11 @@ const ProductsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Paginación */}
+        {/* Paginación (Sin cambios mayores) */}
         {pagination.pages > 1 && (
           <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between items-center">
+             {/* ... tu código de paginación existente ... */}
+             <div className="flex-1 flex justify-between items-center">
               <div>
                 <p className="text-sm text-gray-700">
                   Mostrando <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> a{' '}
@@ -316,7 +347,7 @@ const ProductsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modales */}
+      {/* Modales (Sin cambios) */}
       {showForm && (
         <ProductForm
           mode="create"

@@ -10,21 +10,20 @@ const CategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  
+  // Estado para el checkbox
   const [showInactive, setShowInactive] = useState(false);
 
   useEffect(() => {
     loadCategories();
-  }, [showInactive]);
+  }, [showInactive]); // Se recarga cuando cambia el check
 
   const loadCategories = async () => {
     try {
       setLoading(true);
-      const categoriesData = await inventoryService.getCategories();
-      // Filtrar según el estado activo/inactivo
-      const filteredCategories = showInactive 
-        ? categoriesData 
-        : categoriesData.filter(cat => cat.isActive);
-      setCategories(filteredCategories);
+      // CORRECCIÓN PRINCIPAL: Pasamos el estado al servicio
+      const categoriesData = await inventoryService.getCategories(showInactive);
+      setCategories(categoriesData);
     } catch (error) {
       console.error('Error cargando categorías:', error);
     } finally {
@@ -54,6 +53,9 @@ const CategoriesPage: React.FC = () => {
 
   const handleReactivate = async (id: string) => {
     try {
+        // Confirmación opcional
+      if (!window.confirm('¿Estás seguro de que deseas reactivar esta categoría?')) return;
+      
       await inventoryService.updateCategory(id, { isActive: true });
       loadCategories();
     } catch (error: any) {
@@ -87,23 +89,29 @@ const CategoriesPage: React.FC = () => {
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <label className="flex items-center">
+            <label className="flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={showInactive}
                 onChange={(e) => setShowInactive(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
               />
               <span className="ml-2 text-sm text-gray-700">
                 Mostrar categorías inactivas
               </span>
             </label>
           </div>
-          {showInactive && (
-            <div className="text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-md">
-              💡 Vista de categorías inactivas
-            </div>
-          )}
+          
+          <div className="flex items-center gap-4">
+             {showInactive && (
+                <span className="text-sm text-gray-600 bg-yellow-50 px-3 py-1 rounded-md border border-yellow-100">
+                💡 Incluyendo inactivos
+                </span>
+            )}
+            <span className="text-sm text-gray-500">
+                Total: {categories.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -119,7 +127,7 @@ const CategoriesPage: React.FC = () => {
                 Descripción
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Productos
+                Productos Activos
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Estado
@@ -130,54 +138,63 @@ const CategoriesPage: React.FC = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {categories.map((category) => (
-              <tr key={category.id} className={!category.isActive ? 'bg-gray-50' : 'hover:bg-gray-50'}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`text-sm font-medium ${!category.isActive ? 'text-gray-500' : 'text-gray-900'}`}>
-                    {category.name}
-                  </div>
-                </td>
-                <td className="px-6 py-4">
-                  <div className={`text-sm ${!category.isActive ? 'text-gray-400' : 'text-gray-500'}`}>
-                    {category.description || '-'}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className={`text-sm ${!category.isActive ? 'text-gray-400' : 'text-gray-900'}`}>
-                    {category.productsCount || 0}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    category.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {category.isActive ? 'Activa' : 'Inactiva'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    {user?.permissions?.includes('almacen:write') && (
-                      <>
-                        <button
-                          onClick={() => setEditingCategory(category)}
-                          className={`${!category.isActive ? 'text-gray-600' : 'text-indigo-600'} hover:text-indigo-900`}
-                        >
-                          Editar
-                        </button>
-                        {!category.isActive && (
+            {categories.map((category) => {
+              const isInactive = !category.isActive;
+              return (
+                <tr 
+                    key={category.id} 
+                    className={isInactive ? 'bg-gray-50' : 'hover:bg-gray-50'}
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`text-sm font-medium ${isInactive ? 'text-gray-500' : 'text-gray-900'}`}>
+                      {category.name}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-500'}`}>
+                      {category.description || '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`text-sm ${isInactive ? 'text-gray-400' : 'text-gray-900'}`}>
+                      {category.productsCount || 0}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      category.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {category.isActive ? 'Activa' : 'Inactiva'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-3">
+                      {user?.permissions?.includes('almacen:write') && (
+                        <>
                           <button
-                            onClick={() => handleReactivate(category.id)}
-                            className="text-green-600 hover:text-green-900"
+                            onClick={() => setEditingCategory(category)}
+                            className={`${isInactive ? 'text-gray-400 hover:text-gray-600' : 'text-indigo-600 hover:text-indigo-900'}`}
                           >
-                            Reactivar
+                            Editar
                           </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
+                          
+                          {/* Botón explícito para reactivar */}
+                          {isInactive && (
+                            <button
+                              onClick={() => handleReactivate(category.id)}
+                              className="text-green-600 hover:text-green-900 flex items-center"
+                              title="Reactivar categoría"
+                            >
+                              Reactivar
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -186,8 +203,8 @@ const CategoriesPage: React.FC = () => {
             <div className="text-gray-400 text-6xl mb-4">📁</div>
             <p className="text-gray-500 text-lg">
               {showInactive 
-                ? 'No hay categorías inactivas' 
-                : 'No hay categorías activas'
+                ? 'No se encontraron categorías' 
+                : 'No hay categorías activas registradas'
               }
             </p>
           </div>

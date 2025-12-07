@@ -12,7 +12,6 @@ import type {
   InventoryDashboard,
   StockLevel,
   MovementType,
-  AlertType
 } from '../types/inventory';
 
 export const inventoryService = {
@@ -23,8 +22,8 @@ export const inventoryService = {
   },
 
   // Categorías
-  getCategories: async (): Promise<Category[]> => {
-    const response = await api.get('/inventory/categories');
+  getCategories: async (includeInactive: boolean = false): Promise<Category[]> => {
+    const response = await api.get(`/inventory/categories?includeInactive=${includeInactive}`);
     return response.data;
   },
 
@@ -44,8 +43,8 @@ export const inventoryService = {
   },
 
   // Proveedores
-  getSuppliers: async (): Promise<Supplier[]> => {
-    const response = await api.get('/inventory/suppliers');
+  getSuppliers: async (includeInactive: boolean = false): Promise<Supplier[]> => {
+    const response = await api.get(`/inventory/suppliers?includeInactive=${includeInactive}`);
     return response.data;
   },
 
@@ -65,16 +64,23 @@ export const inventoryService = {
   },
 
   // Productos
-  getProducts: async (page = 1, limit = 20, categoryId?: string, supplierId?: string): Promise<{ products: Product[]; pagination: any }> => {
-    const params = new URLSearchParams();
-    params.append('page', page.toString());
-    params.append('limit', limit.toString());
-    if (categoryId) params.append('categoryId', categoryId);
-    if (supplierId) params.append('supplierId', supplierId);
-    
-    const response = await api.get(`/inventory/products?${params}`);
-    return response.data;
-  },
+getProducts: async (
+  page = 1, 
+  limit = 20, 
+  categoryId?: string, 
+  supplierId?: string, 
+  includeInactive: boolean = false
+): Promise<{ products: Product[]; pagination: any }> => {
+  const params = new URLSearchParams();
+  params.append('page', page.toString());
+  params.append('limit', limit.toString());
+  params.append('includeInactive', includeInactive.toString());
+  if (categoryId) params.append('categoryId', categoryId);
+  if (supplierId) params.append('supplierId', supplierId);
+  
+  const response = await api.get(`/inventory/products?${params}`);
+  return response.data;
+},
 
   getProduct: async (id: string): Promise<Product> => {
     const response = await api.get(`/inventory/products/${id}`);
@@ -130,4 +136,7 @@ export const inventoryService = {
     const response = await api.get('/inventory/reports/low-stock');
     return response.data;
   }
+  
 };
+
+//comentario de prueba
